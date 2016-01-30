@@ -1,0 +1,38 @@
+{
+  "name": "lacona-api",
+  "version": "0.0.1",
+  "description": "Cross-platform API for use with lacona commands",
+  "main": "lib/index.js",
+  "scripts": {
+    "pretest": "babel --optional runtime --stage 0 test --out-dir tmp",
+    "test": "mocha tmp",
+    "build": "babel --optional runtime --stage 0 src --out-dir lib",
+    "validate": "npm run build && npm test",
+    "clean": "rimraf lib tmp",
+    "prepublish": "npm run clean && npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/brandonhorst/lacona-api.git"
+  },
+  "keywords": [
+    "lacona",
+    "api"
+  ],
+  "author": "@brandonhorst",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/brandonhorst/lacona-api/issues"
+  },
+  "homepage": "https://github.com/brandonhorst/lacona-api#readme",
+  "devDependencies": {
+    "babel": "^5.8.34",
+    "chai": "^3.4.1",
+    "mocha": "^2.3.4",
+    "rimraf": "^2.5.0"
+  },
+  "dependencies": {
+    "lacona-phrase": "^0.9.1",
+    "lodash": "^3.10.1"
+  }
+}
