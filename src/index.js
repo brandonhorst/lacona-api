@@ -435,6 +435,19 @@ export function checkBluetooth (done = () => {}) {
   }
 }
 
+export function setDarkMode ({enabled}, done = () => {}) {
+  if (isOSX()) {
+    global.setDarkModeEnabled(enabled, done)
+  }
+}
+
+export function checkDarkMode (done = () => {}) {
+  if (isOSX()) {
+    global.checkDarkModeEnabled((err, enabled) => {
+      err ? done(err) : done(null, {enabled})
+    })
+  }
+}
 export function setWifi ({enabled}, done = () => {}) {
   if (isOSX()) {
     callSystem({
@@ -526,7 +539,7 @@ export function checkVolume (done = () => {}) {
 
 export function shutdown (done = () => {}) {
   if (isOSX()) {
-    runApplescript({script: 'tell application "System Events" to shutdown'}, done)
+    runApplescript({script: 'tell application "System Events" to shut down'}, done)
   }
 }
 
@@ -595,6 +608,13 @@ export function fetchMountedVolumes(done = () => {}) {
 export function unmountVolume ({id}, done = () => {}) {
   if (isOSX()) {
     const script = `tell application "Finder" to eject "${id}"`
+    runApplescript({script}, done)
+  }
+}
+
+export function unmountAllVolumes({}, done = () => {}) {
+  if (isOSX()) {
+    const script = 'tell application "Finder" to eject the disks'
     runApplescript({script}, done)
   }
 }
