@@ -50,21 +50,20 @@ export function showNotification ({title, subtitle, content}, done = () => {}) {
 
 /* Applications */
 
-export function fetchApplications (done) {
+export function fetchApplications () {
   if (isDemo()) {
     return done(null, demoData.applications)
   }
 
   if (isOSX()) {
-    querySpotlight({
+    return new SpotlightQuery({
       directories: ['/Applications'],
       query: "kMDItemContentTypeTree == 'com.apple.application'",
-      attributes: ['kMDItemDisplayName', 'kMDItemCFBundleIdentifier']
-    }).on('data', (data) => {
-      const trueData = _.map(data, ({kMDItemDisplayName, kMDItemCFBundleIdentifier}) => ({name: kMDItemDisplayName, bundleId: kMDItemCFBundleIdentifier}))
-      return done(null, trueData)
-    }).on('error', (err) => {
-      return done(err)
+      attributes: ['kMDItemDisplayName', 'kMDItemCFBundleIdentifier'],
+      dataMap: ({kMDItemDisplayName, kMDItemCFBundleIdentifier}) => ({
+        name: kMDItemDisplayName,
+        bundleId: kMDItemCFBundleIdentifier
+      })
     })
   }
 }
@@ -89,20 +88,19 @@ export function openFileInApplication ({path, bundleId}, done = () => {}) {
 
 /* Bookmarks */
 
-export function fetchBookmarks (done = () => {}) {
+export function fetchBookmarks () {
   if (isDemo()) {
     return done(null, global.demoData.bookmarks)
   }
 
   if (isOSX()) {
-    querySpotlight({
+    return new SpotlightQuery({
       query: "kMDItemContentTypeTree = 'com.apple.safari.bookmark'",
-      attributes: ['kMDItemDisplayName', 'kMDItemURL']
-    }).on('data', (data) => {
-      const trueData = _.map(data, ({kMDItemDisplayName, kMDItemURL}) => ({name: kMDItemDisplayName, url: kMDItemURL}))
-      return done(null, trueData)
-    }).on('error', (err) => {
-      return done(err)
+      attributes: ['kMDItemDisplayName', 'kMDItemURL'],
+      dataMap: ({kMDItemDisplayName, kMDItemURL}) => ({
+        name: kMDItemDisplayName,
+        url: kMDItemURL
+      })
     })
   }
 }
@@ -131,14 +129,14 @@ export function fetchContacts (done = () => {}) {
 
 /* Files */
 
-export function searchFiles ({query}, done = () => {}) {
+export function searchFiles ({query}) {
   if (isDemo()) {
     return done(null, global.demoData.spotlightFiles)
   }
 
   if (isOSX()) {
-    querySpotlight({
-      query: `kMDItemFSName contains[cd] "${query}" && ` +
+    return new SpotlightQuery({
+      query: `kMDItemFSName contains[cd] "${query.replace('\\', '\\\\')}" && ` +
         'kMDItemSupportFileType != "MDSystemFile" && ' +
         'kMDItemContentTypeTree != "com.apple.application" && ' +
         'kMDItemContentTypeTree != "com.apple.application-bundle" && ' +
@@ -147,16 +145,12 @@ export function searchFiles ({query}, done = () => {}) {
         'kMDItemContentTypeTree != "com.apple.safari.history" && ' +
         'kMDItemContentTypeTree != "public.calendar-event" && ' +
         'kMDItemContentTypeTree != "com.apple.ichat.transcript"',
-      attributes: ['kMDItemPath', 'kMDItemContentType']
-    }).on('data', (data) => {
-      const trueData = _.map(data, ({kMDItemPath, kMDItemContentType}) => ({
+      attributes: ['kMDItemPath', 'kMDItemContentType'],
+      limit: 10,
+      dataMap: ({kMDItemPath, kMDItemContentType}) => ({
         path: kMDItemPath,
         contentType: kMDItemContentType
-      }))
-
-      return done(null, trueData)
-    }).on('error', (err) => {
-      return done(err)
+      })
     })
   }
 }
@@ -401,20 +395,16 @@ export function closeBrowserTab ({id}, done = () => {}) {
 
 /* Preference Panes */
 
-export function fetchPreferencePanes (done = () => {}) {
+export function fetchPreferencePanes () {
   if (isDemo()) {
     return done(null, global.demoData.preferencePanes)
   }
 
   if (isOSX()) {
-    querySpotlight({
+    return new SpotlightQuery({
       query: "kMDItemContentType == 'com.apple.systempreference.prefpane'",
-      attributes: ['kMDItemDisplayName', 'kMDItemPath']
-    }).on('data', (data) => {
-      const trueData = _.map(data, ({kMDItemDisplayName, kMDItemPath}) => ({name: kMDItemDisplayName, path: kMDItemPath}))
-      return done(null, trueData)
-    }).on('error', (err) => {
-      return done(err)
+      attributes: ['kMDItemDisplayName', 'kMDItemPath'],
+      dataMap: ({kMDItemDisplayName, kMDItemPath}) => ({name: kMDItemDisplayName, path: kMDItemPath})
     })
   }
 }
@@ -612,7 +602,7 @@ export function unmountVolume ({id}, done = () => {}) {
   }
 }
 
-export function unmountAllVolumes({}, done = () => {}) {
+export function unmountAllVolumes(_, done = () => {}) {
   if (isOSX()) {
     const script = 'tell application "Finder" to eject the disks'
     runApplescript({script}, done)
@@ -752,26 +742,21 @@ export function runApplescript ({script}, done = () => {}) {
 }
 
 class SpotlightQuery extends EventEmitter {
-  constructor ({query = '', attributes = [], directories = [], limit = 100, liveUpdate = false}) {
+  constructor ({query = '', attributes = [], directories = [], limit = 0, liveUpdate = false, dataMap = _.identity}) {
     super()
 
     this.queryId = global.spotlight(query, attributes, directories, limit, liveUpdate, (err, data) => {
       if (err) {
         this.emit('error', err)
       } else {
-        this.emit('data', data)
+        this.emit('data', _.map(data, dataMap))
       }
     })
   }
 
   cancel () {
     global.cancelQuery(this.queryId)
-  }
-}
-
-export function querySpotlight (options) {
-  if (isOSX()) {
-    return new SpotlightQuery(options)
+    delete this.queryId
   }
 }
 
