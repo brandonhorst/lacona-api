@@ -1,8 +1,43 @@
+/** @jsx createElement */
 import _ from 'lodash'
 import { EventEmitter } from 'events'
-import { Source } from 'lacona-phrase'
+import {map} from 'rxjs/operator/map'
+import {Observable} from 'rxjs/Observable'
 
-/* OS Detection */
+const demoConfig = {
+  webSearch: {
+    searchEngines: [
+      {name: 'Google', url: 'https://www.google.com/search?q=${query}'},
+      {name: 'Google Images', url: 'https://www.google.com/search?q=${query}&tbm=isch'},
+      {name: 'Google Maps', url: 'https://www.google.com/maps?q=${query}'},
+      {name: 'Gmail', url: 'https://www.google.com/search?q=${query}'},
+      {name: 'Google Mail', url: 'http://mail.google.com/mail/u/0/#search/${query}'},
+      {name: 'Google Inbox', url: 'https://inbox.google.com/search/${query}'},
+      {name: 'Google Drive', url: 'https://drive.google.com/drive/u/0/#search?q=${query}'},
+      {name: 'Maps', url: 'http://maps.apple.com/?q=${query}'},
+      {name: 'Twitter', url: 'https://twitter.com/search?q=${query}'},
+      {name: 'Facebook', url: 'https://www.facebook.com/search/results.php?q=${query}'},
+      {name: 'LinkedIn', url: 'https://www.linkedin.com/vsearch/p?keywords=${query}'},
+      {name: 'Youtube', url: 'https://www.youtube.com/results?search_query=${query}'},
+      {name: 'Wikipedia', url: 'https://wikipedia.org/wiki/Special:Search/${query}'},
+      {name: 'Amazon', url: 'http://www.amazon.com/s?url=search-alias=aps&field-keywords=${query}&tag=lacona-20'},
+      {name: 'eBay', url: 'http://shop.ebay.com/?_nkw=${query}'},
+      {name: 'IMDb', url: 'http://www.imdb.com/find?s=all&q=${query}'},
+      {name: 'Rotten Tomatoes', url: 'http://www.rottentomatoes.com/search/?search=${query}'},
+      {name: 'Bing', url: 'http://www.bing.com/search?q=${query}'},
+      {name: 'Yahoo', url: 'https://search.yahoo.com/search?p=${query}'},
+      {name: 'Ask', url: 'http://www.ask.com/web?q=${query}'},
+      {name: 'Flickr', url: 'https://www.flickr.com/search/?q=${query}&w=all'},
+      {name: 'Wolfram|Alpha', url: 'http://www.wolframalpha.com/input/?i=${query}'},
+      {name: 'Yubnub', url: 'http://www.yubnub.org/parser/parse?command=${query}'},
+      {name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q=${query}'}
+    ]
+  },
+  applications: {
+    searchDirectories: [],
+    applications: []
+  }
+}
 
 export function isOSX () {
   return process.platform === 'darwin' || !isDemo()
@@ -50,20 +85,25 @@ export function showNotification ({title, subtitle, content}, done = () => {}) {
 
 /* Applications */
 
-export function fetchApplications () {
+export function fetchApplications ({directories, appPaths}) {
   if (isDemo()) {
-    return done(null, demoData.applications)
+    return new DataEmitter(demoData.applications)
   }
 
   if (isOSX()) {
+    const tilde = userHome()
+    const trueDirectories = _.map(directories, dir => dir.replace(/^~/, tilde))
+    const truePaths = _.map(appPaths, path => path.replace(/^~/, tilde))
     return new SpotlightQuery({
-      directories: ['/Applications'],
+      directories: trueDirectories,
       query: "kMDItemContentTypeTree == 'com.apple.application'",
       attributes: ['kMDItemDisplayName', 'kMDItemCFBundleIdentifier'],
-      dataMap: ({kMDItemDisplayName, kMDItemCFBundleIdentifier}) => ({
-        name: kMDItemDisplayName,
-        bundleId: kMDItemCFBundleIdentifier
-      })
+      dataMap(data) {
+        return _.map(data, ({kMDItemDisplayName, kMDItemCFBundleIdentifier}) => ({
+          name: kMDItemDisplayName,
+          bundleId: kMDItemCFBundleIdentifier
+        }))
+      }
     })
   }
 }
@@ -86,21 +126,27 @@ export function openFileInApplication ({path, bundleId}, done = () => {}) {
   }
 }
 
+export function bundleIdForApplication({name}) {
+  return global.bundleIdForApplicationName(name)
+}
+
 /* Bookmarks */
 
 export function fetchBookmarks () {
   if (isDemo()) {
-    return done(null, global.demoData.bookmarks)
+    return new DataEmitter(demoData.bookmarks)
   }
 
   if (isOSX()) {
     return new SpotlightQuery({
       query: "kMDItemContentTypeTree = 'com.apple.safari.bookmark'",
       attributes: ['kMDItemDisplayName', 'kMDItemURL'],
-      dataMap: ({kMDItemDisplayName, kMDItemURL}) => ({
-        name: kMDItemDisplayName,
-        url: kMDItemURL
-      })
+      dataMap(data) {
+        return _.map(data, ({kMDItemDisplayName, kMDItemURL}) => ({
+          name: kMDItemDisplayName,
+          url: kMDItemURL
+        }))
+      }
     })
   }
 }
@@ -131,33 +177,41 @@ export function fetchContacts (done = () => {}) {
 
 export function searchFiles ({query}) {
   if (isDemo()) {
-    return done(null, global.demoData.spotlightFiles)
+    return new DataEmitter(demoData.spotlightFiles)
   }
 
   if (isOSX()) {
+    const escapedQuery = query.replace('\\', '\\\\').replace('"', '\"')
+
     return new SpotlightQuery({
-      query: `kMDItemFSName contains[cd] "${query.replace('\\', '\\\\')}" && ` +
-        'kMDItemSupportFileType != "MDSystemFile" && ' +
-        'kMDItemContentTypeTree != "com.apple.application" && ' +
-        'kMDItemContentTypeTree != "com.apple.application-bundle" && ' +
-        'kMDItemContentTypeTree != "com.apple.safari.bookmark" && ' +
-        'kMDItemContentTypeTree != "public.contact" && ' +
-        'kMDItemContentTypeTree != "com.apple.safari.history" && ' +
-        'kMDItemContentTypeTree != "public.calendar-event" && ' +
+      query: `kMDItemFSName BEGINSWITH[cd] "${escapedQuery}" AND ` +
+        'kMDItemSupportFileType != "MDSystemFile" AND ' +
+        'kMDItemContentTypeTree != "com.apple.application" AND ' +
+        'kMDItemContentTypeTree != "com.apple.application-bundle" AND ' +
+        'kMDItemContentTypeTree != "com.apple.safari.bookmark" AND ' +
+        'kMDItemContentTypeTree != "public.contact" AND ' +
+        'kMDItemContentTypeTree != "com.apple.safari.history" AND ' +
+        'kMDItemContentTypeTree != "public.calendar-event" AND ' +
         'kMDItemContentTypeTree != "com.apple.ichat.transcript"',
       attributes: ['kMDItemPath', 'kMDItemContentType'],
       limit: 10,
-      dataMap: ({kMDItemPath, kMDItemContentType}) => ({
-        path: kMDItemPath,
-        contentType: kMDItemContentType
-      })
+      dataMap(data) {
+        return _.map(data, ({kMDItemPath, kMDItemContentType}) => ({
+          path: kMDItemPath,
+          contentType: kMDItemContentType
+        }))
+      }
     })
   }
 }
 
 export function fetchDirectoryContents ({path}, done = () => {}) {
   if (isDemo()) {
-    return done(null, global.demoData.rootFiles[path])
+    if (_.startsWith(path, '~')) {
+      return done(null, global.demoData.rootFiles[`/Users/LaconaUser${path.slice(1)}`])
+    } else {
+      return done(null, global.demoData.rootFiles[path])
+    }
   }
 
   if (isOSX()) {
@@ -397,14 +451,16 @@ export function closeBrowserTab ({id}, done = () => {}) {
 
 export function fetchPreferencePanes () {
   if (isDemo()) {
-    return done(null, global.demoData.preferencePanes)
+    return new DataEmitter(demoData.preferencePanes)
   }
 
   if (isOSX()) {
     return new SpotlightQuery({
       query: "kMDItemContentType == 'com.apple.systempreference.prefpane'",
       attributes: ['kMDItemDisplayName', 'kMDItemPath'],
-      dataMap: ({kMDItemDisplayName, kMDItemPath}) => ({name: kMDItemDisplayName, path: kMDItemPath})
+      dataMap(data) {
+        return _.map(data, ({kMDItemDisplayName, kMDItemPath}) => ({name: kMDItemDisplayName, path: kMDItemPath}))
+      }
     })
   }
 }
@@ -702,43 +758,27 @@ export function musicStop () {
   }
 }
 
-const webSearches = [
-  {name: 'Google', url: 'https://www.google.com/search?q=${query}'},
-  {name: 'Google Images', url: 'https://www.google.com/search?q=${query}&tbm=isch'},
-  {name: 'Google Maps', url: 'https://www.google.com/maps?q=${query}'},
-  {name: 'Gmail', url: 'https://www.google.com/search?q=${query}'},
-  {name: 'Google Mail', url: 'http://mail.google.com/mail/u/0/#search/${query}'},
-  {name: 'Google Inbox', url: 'https://inbox.google.com/search/${query}'},
-  {name: 'Google Drive', url: 'https://drive.google.com/drive/u/0/#search?q=${query}'},
-  {name: 'Maps', url: 'http://maps.apple.com/?q=${query}'},
-  {name: 'Twitter', url: 'https://twitter.com/search?q=${query}'},
-  {name: 'Facebook', url: 'https://www.facebook.com/search/results.php?q=${query}'},
-  {name: 'LinkedIn', url: 'https://www.linkedin.com/vsearch/p?keywords=${query}'},
-  {name: 'Youtube', url: 'https://www.youtube.com/results?search_query=${query}'},
-  {name: 'Wikipedia', url: 'https://wikipedia.org/wiki/Special:Search/${query}'},
-  {name: 'Amazon', url: 'http://www.amazon.com/s?url=search-alias=aps&field-keywords=${query}&tag=lacona-20'},
-  {name: 'eBay', url: 'http://shop.ebay.com/?_nkw=${query}'},
-  {name: 'IMDb', url: 'http://www.imdb.com/find?s=all&q=${query}'},
-  {name: 'Rotten Tomatoes', url: 'http://www.rottentomatoes.com/search/?search=${query}'},
-  {name: 'Bing', url: 'http://www.bing.com/search?q=${query}'},
-  {name: 'Yahoo', url: 'https://search.yahoo.com/search?p=${query}'},
-  {name: 'Ask', url: 'http://www.ask.com/web?q=${query}'},
-  {name: 'Flickr', url: 'https://www.flickr.com/search/?q=${query}&w=all'},
-  {name: 'Wolfram|Alpha', url: 'http://www.wolframalpha.com/input/?i=${query}'},
-  {name: 'Yubnub', url: 'http://www.yubnub.org/parser/parse?command=${query}'},
-  {name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q=${query}'}
-]
-
-export function fetchSearchEngines (done) {
-  done(null, webSearches)
-}
-
 /* OSX specific */
 
 export function runApplescript ({script}, done = () => {}) {
   if (isOSX()) {
     global.applescript(script, done)
   }
+}
+
+class DataEmitter extends EventEmitter {
+  constructor (data) {
+    super()
+    this.data = data
+  }
+
+  on (event, handler) {
+    super.on(event, handler)
+    this.emit('data', this.data)
+    return this
+  }
+
+  cancel() {}
 }
 
 class SpotlightQuery extends EventEmitter {
@@ -749,7 +789,7 @@ class SpotlightQuery extends EventEmitter {
       if (err) {
         this.emit('error', err)
       } else {
-        this.emit('data', _.map(data, dataMap))
+        this.emit('data', dataMap(data))
       }
     })
   }
@@ -766,34 +806,60 @@ export function callSystem ({command, args = []}, done) {
 
 /* Config and Context */
 
-class SubscriptionSource extends Source {
-  onCreate () {
-    if (isDemo()) {
-      this.setData(global.demoConfig[this.props.key])
-    } else if (isOSX()) {
-      const {subscriptionId, value} = global.subscribeToChanges(this.constructor.eventName, this.change.bind(this))
+// class SubscriptionSource extends Source {
+//   onCreate () {
+//     if (isDemo()) {
+//       this.setData(global.demoConfig)
+//     } else if (isOSX()) {
+//       const {subscriptionId, value} = global.subscribeToChanges(this.change.bind(this))
 
-      this.setData(value[this.props.key])
+//       this.setData(value)
 
-      this.subscriptionId = subscriptionId
+//       this.subscriptionId = subscriptionId
+//     }
+//   }
+
+//   onDelete () {
+//     if (isOSX()) {
+//       global.removeChangeSubscription(this.subscriptionId)
+//     }
+//   }
+
+//   change (value) {
+//     this.setData(value)
+//   }
+// }
+
+const subscription = new Observable(observer => {
+  let subscriptionId
+
+  if (isDemo()) {
+    observer.next(global.demoConfig)
+  } else if (isOSX()) {
+    const {subscriptionId, value} = global.subscribeToChanges((value) => {
+      observer.next(value)
+    })
+    observer.next(value)
+    return () => {
+      global.removeChangeSubscription(subscriptionId)
     }
   }
+})
 
-  onDelete () {
-    if (isOSX()) {
-      global.removeChangeSubscription(this.constructor.eventName, this.subscriptionId)
-    }
-  }
-
-  change (newValues) {
-    if (!_.isEqual(newValues[this.props.key], this.data)) {
-      this.setData(newValues[this.props.key])
-    }
-  }
+export function Config ({props}) {
+  return subscription::map(x => x.config[props.property])
 }
 
-export class Config extends SubscriptionSource {}
-Config.eventName = 'config'
+// export class Config extends Source {
+//   observe () {
+//     return (
+//       <map function={this.getData.bind(this)}>
+//         <SubscriptionSource />
+//       </map>
+//     )
+//   }
 
-export class Context extends SubscriptionSource {}
-Context.eventName = 'context'
+//   getData(data) {
+//     this.setData(data.config[this.props.property])
+//   }
+// }
