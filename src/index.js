@@ -1,6 +1,5 @@
 /** @jsx createElement */
 import _ from 'lodash'
-import { EventEmitter } from 'events'
 import {map} from 'rxjs/operator/map'
 import {Observable} from 'rxjs/Observable'
 
@@ -87,23 +86,24 @@ export function showNotification ({title, subtitle, content}, done = () => {}) {
 
 export function fetchApplications ({directories, appPaths}) {
   if (isDemo()) {
-    return new DataEmitter(demoData.applications)
+    return new Observable(observer => {
+      observer.next(demoData.applicatons)
+    })
   }
 
   if (isOSX()) {
     const tilde = userHome()
     const trueDirectories = _.map(directories, dir => dir.replace(/^~/, tilde))
     const truePaths = _.map(appPaths, path => path.replace(/^~/, tilde))
-    return new SpotlightQuery({
+    return querySpotlight({
       directories: trueDirectories,
       query: "kMDItemContentTypeTree == 'com.apple.application'",
-      attributes: ['kMDItemDisplayName', 'kMDItemCFBundleIdentifier'],
-      dataMap(data) {
-        return _.map(data, ({kMDItemDisplayName, kMDItemCFBundleIdentifier}) => ({
-          name: kMDItemDisplayName,
-          bundleId: kMDItemCFBundleIdentifier
-        }))
-      }
+      attributes: ['kMDItemDisplayName', 'kMDItemCFBundleIdentifier']
+    })::map((data) => {
+      return _.map(data, ({kMDItemDisplayName, kMDItemCFBundleIdentifier}) => ({
+        name: kMDItemDisplayName,
+        bundleId: kMDItemCFBundleIdentifier
+      }))
     })
   }
 }
@@ -134,19 +134,20 @@ export function bundleIdForApplication({name}) {
 
 export function fetchBookmarks () {
   if (isDemo()) {
-    return new DataEmitter(demoData.bookmarks)
+    return new Observable(observer => {
+      observer.next(demoData.bookmarks)
+    })
   }
 
   if (isOSX()) {
-    return new SpotlightQuery({
+    return querySpotlight({
       query: "kMDItemContentTypeTree = 'com.apple.safari.bookmark'",
-      attributes: ['kMDItemDisplayName', 'kMDItemURL'],
-      dataMap(data) {
-        return _.map(data, ({kMDItemDisplayName, kMDItemURL}) => ({
-          name: kMDItemDisplayName,
-          url: kMDItemURL
-        }))
-      }
+      attributes: ['kMDItemDisplayName', 'kMDItemURL']
+    })::map((data) => {
+      return _.map(data, ({kMDItemDisplayName, kMDItemURL}) => ({
+        name: kMDItemDisplayName,
+        url: kMDItemURL
+      }))
     })
   }
 }
@@ -177,13 +178,15 @@ export function fetchContacts (done = () => {}) {
 
 export function searchFiles ({query}) {
   if (isDemo()) {
-    return new DataEmitter(demoData.spotlightFiles)
+    return new Observable(observer => {
+      observer.next(demoData.spotlightFiles)
+    })
   }
 
   if (isOSX()) {
-    const escapedQuery = query.replace('\\', '\\\\').replace('"', '\"')
+    const escapedQuery = query.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
 
-    return new SpotlightQuery({
+    return querySpotlight({
       query: `kMDItemFSName BEGINSWITH[cd] "${escapedQuery}" AND ` +
         'kMDItemSupportFileType != "MDSystemFile" AND ' +
         'kMDItemContentTypeTree != "com.apple.application" AND ' +
@@ -194,13 +197,12 @@ export function searchFiles ({query}) {
         'kMDItemContentTypeTree != "public.calendar-event" AND ' +
         'kMDItemContentTypeTree != "com.apple.ichat.transcript"',
       attributes: ['kMDItemPath', 'kMDItemContentType'],
-      limit: 10,
-      dataMap(data) {
-        return _.map(data, ({kMDItemPath, kMDItemContentType}) => ({
-          path: kMDItemPath,
-          contentType: kMDItemContentType
-        }))
-      }
+      limit: 10
+    })::map((data) => {
+      return _.map(data, ({kMDItemPath, kMDItemContentType}) => ({
+        path: kMDItemPath,
+        contentType: kMDItemContentType
+      }))
     })
   }
 }
@@ -451,16 +453,17 @@ export function closeBrowserTab ({id}, done = () => {}) {
 
 export function fetchPreferencePanes () {
   if (isDemo()) {
-    return new DataEmitter(demoData.preferencePanes)
+    return new Observable(observer => {
+      observer.next(demoData.preferencePanes)
+    })
   }
 
   if (isOSX()) {
-    return new SpotlightQuery({
+    return querySpotlight({
       query: "kMDItemContentType == 'com.apple.systempreference.prefpane'",
-      attributes: ['kMDItemDisplayName', 'kMDItemPath'],
-      dataMap(data) {
-        return _.map(data, ({kMDItemDisplayName, kMDItemPath}) => ({name: kMDItemDisplayName, path: kMDItemPath}))
-      }
+      attributes: ['kMDItemDisplayName', 'kMDItemPath']
+    })::map((data) => {
+      return _.map(data, ({kMDItemDisplayName, kMDItemPath}) => ({name: kMDItemDisplayName, path: kMDItemPath}))
     })
   }
 }
@@ -682,7 +685,7 @@ function arrangeOSXMusic (arrays) {
     .thru(_.spread(_.zip))
     .map(_.partial(_.zipObject, ['name', 'album', 'artist', 'albumArtist', 'composer', 'genre', 'year', 'discNumber', 'trackNumber', 'id']))
     .tap(items => _.forEach(items, simplifyArtist))
-    .sortByAll([simplifyArtist, sortStringAsInteger('year'), 'album', sortStringAsInteger('discNumber'), sortStringAsInteger('trackNumber'), sortStringAsInteger('id')])
+    .sortBy([simplifyArtist, sortStringAsInteger('year'), 'album', sortStringAsInteger('discNumber'), sortStringAsInteger('trackNumber'), sortStringAsInteger('id')])
     .value()
 }
 
@@ -766,38 +769,22 @@ export function runApplescript ({script}, done = () => {}) {
   }
 }
 
-class DataEmitter extends EventEmitter {
-  constructor (data) {
-    super()
-    this.data = data
-  }
+function querySpotlight ({query = '', attributes = [], directories = [],
+  limit = 0, liveUpdate = false}) {
+  return new Observable(observer => {
+    observer.next([])
 
-  on (event, handler) {
-    super.on(event, handler)
-    this.emit('data', this.data)
-    return this
-  }
-
-  cancel() {}
-}
-
-class SpotlightQuery extends EventEmitter {
-  constructor ({query = '', attributes = [], directories = [], limit = 0, liveUpdate = false, dataMap = _.identity}) {
-    super()
-
-    this.queryId = global.spotlight(query, attributes, directories, limit, liveUpdate, (err, data) => {
+    const queryId = global.spotlight(query, attributes, directories,
+      limit, liveUpdate, (err, data) => {
       if (err) {
-        this.emit('error', err)
+        observer.error(err)
       } else {
-        this.emit('data', dataMap(data))
+        observer.next(data)
       }
     })
-  }
 
-  cancel () {
-    global.cancelQuery(this.queryId)
-    delete this.queryId
-  }
+    return () => global.cancelQuery(queryId)
+  })
 }
 
 export function callSystem ({command, args = []}, done) {
@@ -805,30 +792,6 @@ export function callSystem ({command, args = []}, done) {
 }
 
 /* Config and Context */
-
-// class SubscriptionSource extends Source {
-//   onCreate () {
-//     if (isDemo()) {
-//       this.setData(global.demoConfig)
-//     } else if (isOSX()) {
-//       const {subscriptionId, value} = global.subscribeToChanges(this.change.bind(this))
-
-//       this.setData(value)
-
-//       this.subscriptionId = subscriptionId
-//     }
-//   }
-
-//   onDelete () {
-//     if (isOSX()) {
-//       global.removeChangeSubscription(this.subscriptionId)
-//     }
-//   }
-
-//   change (value) {
-//     this.setData(value)
-//   }
-// }
 
 const subscription = new Observable(observer => {
   let subscriptionId
@@ -849,17 +812,3 @@ const subscription = new Observable(observer => {
 export function Config ({props}) {
   return subscription::map(x => x.config[props.property])
 }
-
-// export class Config extends Source {
-//   observe () {
-//     return (
-//       <map function={this.getData.bind(this)}>
-//         <SubscriptionSource />
-//       </map>
-//     )
-//   }
-
-//   getData(data) {
-//     this.setData(data.config[this.props.property])
-//   }
-// }
