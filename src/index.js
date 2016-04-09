@@ -87,7 +87,7 @@ export function showNotification ({title, subtitle, content}, done = () => {}) {
 export function fetchApplications ({directories, appPaths}) {
   if (isDemo()) {
     return new Observable(observer => {
-      observer.next(demoData.applicatons)
+      observer.next(demoData.applications)
     })
   }
 
