@@ -522,18 +522,6 @@ export function checkWifi (done = () => {}) {
   }
 }
 
-function toggleDoNotDisturbEnabled (done) {
-  const script = `
-    tell application "System Events" to tell process "SystemUIServer"
-      key down option
-      click menu bar item 1 of menu bar 2
-      key up option
-    end tell
-  `
-
-  runApplescript({script}, done)
-}
-
 export function setDoNotDisturb ({enabled}, done = () => {}) {
   if (isOSX()) {
     if (enabled) {
@@ -769,7 +757,7 @@ export function runApplescript ({script}, done = () => {}) {
   }
 }
 
-function querySpotlight ({query = '', attributes = [], directories = [],
+export function querySpotlight ({query = '', attributes = [], directories = [],
   limit = 0, liveUpdate = false}) {
   return new Observable(observer => {
     observer.next([])

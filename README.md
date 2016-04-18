@@ -1,2 +1,317 @@
 # lacona-api
 Cross-platform API for use with Lacona commands
+
+## Environment Detection
+
+### isOSX
+
+```js
+isOSX -> Boolean
+```
+
+Returns `true` if the system is running on Mac OSX.
+
+### isDemo
+
+```js
+isDemo -> Boolean
+```
+
+Returns `true` if the system is running in a Demo environment.
+
+## Low-level functions
+
+Use these for implementing new functionality that is not provided by lacona-api.
+If you have functionality that you believe would be useful to other commands,
+please open an issue and work toward adding it to the core - that will provide
+improved performance and reliability across platforms.
+
+### runApplescript
+
+```js
+runApplescript({script: String}, done: Callback<Any>)
+```
+
+Run `script` as an applescript script. Any value returned will be exported
+as a JSON object and provided to `done`.
+
+This function does nothing if run on non-OSX environments.
+
+### querySpotlight
+
+```js
+querySpotlight({
+  query: String,
+  attributes: Array<String>,
+  directories: Array<String>,
+  limit: Integer,
+  liveUpdate: Boolean
+}) -> Observable<Array<Object>>
+```
+
+Queries Spotlight, and returns an Observable. Matches the signature of
+`mdfind`.
+
+### callSystem
+
+```js
+callSystem({
+  command: String,
+  args: Array<String>
+}, done: Callback<String>)
+```
+
+Runs a arbitrary system command. Calls `done` with the contents of `STDOUT`.
+
+### showNotification
+
+```js
+showNotification({
+  title: String,
+  subtitle: String,
+  content: String
+}, done: Callback<void>)
+```
+
+Displays an OS notification (using Notification Center, on OSX).
+
+## Opening Things
+
+### openURL
+
+```js
+openURL({url: String}) -> void
+```
+
+Opens a given URL (with a protocol) in the default handler.
+
+### openFile
+
+```js
+openFile({path: String}) -> void
+```
+
+Opens a given file in the default handler. Leading `~` will be expanded.
+
+## Working with Applications
+
+### fetchApplications
+
+```js
+fetchApplications({
+  directories: Array<String>,
+  appPaths: Array<String>
+}) -> Observable<{name: String, bundleId: String}>
+```
+
+Creates a live spotlight query for Applications - recursively
+searching the given `directories`, and adding the apps at `appPaths`
+
+### launchApplication
+
+```js
+launchApplication({bundleId: String})
+```
+
+### openURLInApplication
+
+```js
+openURLInApplication({url: String, bundleId: String})
+```
+
+### openFileInApplication
+
+```js
+openFileInApplication({path: String, bundleId: String})
+```
+
+### bundleIdForApplication
+
+```js 
+bundleIdForApplication({name}) -> String
+```
+
+Syncronously returns the Bundle ID for a given application name.
+
+> bundleIdForApplication({name: "Safari"}) === "com.apple.safari"
+
+## Contacts, Calendars, and Reminders
+
+### createEvent
+
+```js
+createEvent({
+  title: String,
+  start: Date,
+  end: Date,
+  allDay: Boolean
+}, done: Callback<void>)
+```
+
+Creates an event on the default calendar. Calls `done` with an error or nothing.
+
+### createReminder
+
+```js
+createReminder({
+  title: String,
+  date: Date
+}) -> void
+
+Creates a reminder on the default list. Calls `done` with an error or nothing.
+
+### fetchUserContact
+
+```js
+fetchUserContact(Callback<Object>)
+```
+
+Returns the contact that the user has set as their own.
+
+### fetchContacts
+
+```js
+fetchContacts(Callback<Object>)
+
+Returns all contacts on the system.
+
+## Working with Bookmarks
+
+### fetchBookmarks
+
+```js
+fetchBookmarks() -> Observable<{name:String, url: String}>
+```
+
+Creates a live spotlight query for Bookmarks. `url` can be opened using
+`openUrl({url})`.
+
+## Working with Files
+
+### searchFiles
+
+```js
+searchFiles({
+  query: String
+}) -> Observable<{path: String, contentType: String}>
+```
+
+Creates a non-live spotlight query that searches filenames for a given string.
+This search is case- and diacritic-insensitive. It does not search
+applications, system files, bookmarks, contacts, browser history, calendar
+events, or chat transcripts.
+
+### fetchDirectoryContents
+
+```js
+fetchDirectoryContents({path: String}, done: Callback<Array<Object>>)
+```
+
+Returns the contents of a given directory.
+
+### userHome
+
+```js
+userHome() -> String
+```
+
+Returns the user's home directory.
+
+## Working with Mounted Volumes
+
+### fetchMountedVolumes
+
+### unmountVolume
+
+### unmountAllVolumes
+
+## Working with Running Applications
+
+### fetchRunningApplications
+
+### activateApplication
+
+### hideApplication
+
+### quitApplication
+
+## Working with Application Windows
+
+### closeApplicationWindows
+
+### fetchOpenWindows
+
+### closeOpenWindow
+
+### activateOpenWindow
+
+## Working with Browser Tabs
+
+### fetchBrowserTabs
+
+### activateBrowserTab
+
+### closeBrowserTab
+
+## Working with Preference Panes
+
+### fetchPreferencePanes
+
+## Working with iTunes
+
+### fetchMusic
+
+### playSongIds
+
+### musicPlay
+
+### musicPause
+
+### musicNext
+
+### musicPrevious
+
+### musicStop
+
+## Working with System Settings
+
+### setBluetooth
+
+### checkBluetooth
+
+### setDarkMode
+
+### checkDarkMode
+
+### setWifi
+
+### checkWifi
+
+### setDoNotDisturb
+
+### checkDoNotDisturb
+
+### setVolume
+
+### checkVolume
+
+## System Events
+
+### shutdown
+
+### restart
+
+### logOut
+
+### sleep
+
+### lock
+
+### hibernate
+
+### turnOffDisplay
+
+### turnOnScreensaver
+
+### emptyTrash
+
