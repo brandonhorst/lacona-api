@@ -800,3 +800,7 @@ const subscription = new Observable(observer => {
 export function Config ({props}) {
   return subscription::map(x => x.config[props.property])
 }
+
+export function openLaconaPreferences () {
+  global.openSettings()
+}
