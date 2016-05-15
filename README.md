@@ -19,6 +19,28 @@ isDemo -> Boolean
 
 Returns `true` if the system is running in a Demo environment.
 
+## Javascript Helpers
+
+The Lacona Javascript execution environment does not include a few common
+JS features - Lacona reimplements them.
+
+### setTimeout
+
+```js
+setTimeout(done: Callback<Any>, ms: Number) -> Any
+```
+
+Calls `done` after `ms` ms.
+Returns an opaque value which can be passed to `clearTimeout`.
+
+### clearTimeout
+
+```js
+clearTimeout(opaque: Any)
+```
+
+Cancels a timeout started by `setTimeout`.
+
 ## Low-level functions
 
 Use these for implementing new functionality that is not provided by lacona-api.

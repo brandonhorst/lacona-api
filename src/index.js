@@ -46,6 +46,16 @@ export function isDemo () {
   return process.env.LACONA_ENV === 'demo'
 }
 
+/* Timers */
+
+export function setTimeout (done, ms) {
+  return global.setTimeout(done, ms)
+}
+
+export function clearTimeout (opaque) {
+  global.clearTimeout(opaque)
+}
+
 /* Open */
 
 export function openURL ({url}) {
