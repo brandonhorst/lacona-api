@@ -557,7 +557,7 @@ export function checkDoNotDisturb (done = () => {}) {
       if (err) {
         done(err)
       } else {
-        const enabled = _.contains(results, '1')
+        const enabled = _.includes(results, '1')
         done(null, {enabled})
       }
     })
