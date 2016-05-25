@@ -338,3 +338,5 @@ Returns the user's home directory.
 ### emptyTrash
 
 ### openLaconaPreferences
+
+### reloadAddons
