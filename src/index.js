@@ -785,11 +785,11 @@ export function querySpotlight ({query = '', attributes = [], directories = [],
   })
 }
 
-export function callSystem ({command, args = []}, done) {
+export function callSystem ({command, args = []}, done = () => {}) {
   global.system(command, args, done)
 }
 
-export function reloadAddons ({unused}, done) {
+export function reloadAddons ({unused} = {}, done = () => {}) {
   global.reloadAddons(done)
 }
 
