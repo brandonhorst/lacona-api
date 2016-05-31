@@ -792,51 +792,51 @@ export function callSystem ({command, args = []}, done = () => {}) {
 // This code largely taken from node-osa
 //  https://github.com/brandonhorst/node-osa/blob/master/lib/osa.js
 export function callNode ({func, args = []}, done = () => {}) {
-  var consoleLogPrefix = '<lacona:callNode>';
-  var consoleLogSuffix = '</lacona:callNode>';
+  const consoleLogPrefix = '<lacona:callNode>';
+  const consoleLogSuffix = '</lacona:callNode>';
 
   function extractLogs (stderr) {
-    var reg = new RegExp('^' + consoleLogPrefix + ' ([\\s\\S]*?) ' + consoleLogSuffix + '$', 'gm');
-    var matches = [];
-    var found;
+    const reg = new RegExp('^' + consoleLogPrefix + ' ([\\s\\S]*?) ' + consoleLogSuffix + '$', 'gm')
+    const matches = []
+    var found
     while ((found = reg.exec(stderr)) !== null) {
-      matches.push(found[1]);
-      reg.lastIndex -= found[0].split(':')[1].length;
+      matches.push(found[1])
+      reg.lastIndex -= found[0].split(':')[1].length
     }
 
-    return matches.length > 0 ? matches.join('\n') : null;
+    return matches.length > 0 ? matches.join('\n') : null
   }
 
   // conver these args to json
-  var jsonArgs = args.map(JSON.stringify);
+  const jsonArgs = args.map(JSON.stringify)
 
   // build a string to call osaFunction, pass in args, and evaulate to
   // the JSON representation of the return value, then call it with osascript
-  var consoleLogPatch = 'var _old = console.log; console.log = function () { Array.prototype.unshift.call(arguments, "' +
-    consoleLogPrefix + '"); Array.prototype.push.call(arguments, "' + consoleLogSuffix +
-    '"); console.error.apply(console, arguments); }; ';
-  var functionCallString = consoleLogPatch + '_old(JSON.stringify((' + func.toString() + ')(' + jsonArgs.join(',') + ')));';
+  const consoleLogPatch = `var _oldLog = console.log; var _oldError = console.error; console.log = console.error = function () { Array.prototype.unshift.call(arguments, "${consoleLogPrefix}"); Array.prototype.push.call(arguments, "${consoleLogSuffix}"); _oldError.apply(console, arguments); }; `
+  const callbackFunction = `function _callback (err, result) { _oldLog(JSON.stringify([err, result])) };`
+  const stringArgs = _.map(jsonArgs, (jsonArg) => `${jsonArg}, `)
+  const functionCallString = consoleLogPatch + callbackFunction + `(${func.toString()})(${stringArgs}_callback);`
 
   function callback (err, stdout, stderr) {
-    const log = extractLogs(stderr);
+    const log = extractLogs(stderr)
 
     // if an error was thrown, it will go into err - just pass it through
     if (err) {
-      done(err);
+      done(err)
 
     // if no error was thrown, anything returned will be in stdout
     } else {
       try {
         if (stdout === '\n') {
-          done(null, undefined, log);
+          done(null, undefined, log)
         } else {
-          const result = JSON.parse(stdout);
-          done(null, result, log);
+          const result = JSON.parse(stdout)
+          done(result[0], result[1], log)
         }
       // if nothing was in stdout (or it wasn't JSON), something went wrong
       } catch (e) {
-        const newErr = new Error('Function did not return an object: ' + e.message);
-        done(newErr);
+        const newErr = new Error('Function did not return an object: ' + e.message)
+        done(newErr)
       }
     }
   }

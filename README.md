@@ -85,6 +85,33 @@ callSystem({
 
 Runs a arbitrary system command. Calls `done` with the contents of `STDOUT`.
 
+### callNode
+
+```js
+callNode({
+  func: Function,
+  args: Array<Any>
+}, done: Callback<Error?, Any, String>
+```
+
+Executes a function `func` in a [node.js](https://nodejs.org/en/) environment.
+This node executable is bundled with Lacona - it does not use the node installed
+on the system, if one exists.
+
+`func` will be passed any arguments specified in `args`, followed by a
+`callback` function. That callback should be called `callback(err, result)`
+`result` is any JSON-serializable object.
+
+The `done` callback will be called with 3 arguments: an Error or null,
+the `result` object, and a newline-joined string of all `console.log` and
+`console.error` statements called.
+
+#### Limitations
+
+- As it is executing in an entirely different environment, the context of the passed osaFunction is completely ignored. It cannot behave like a closure or modify any external variables.
+- As JSON is used as the transport mechanism, only Objects, Arrays, Numbers, Strings, true, false, and null can be passed back and forth between the two environments. That is to say, you cannot return an complex object (Streams, Observables, Promises, EventEmitters, etc).
+- As each call spawns off a new process and spins up a new environment, there may be some delay.
+
 ### showNotification
 
 ```js
