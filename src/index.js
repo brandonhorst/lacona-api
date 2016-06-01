@@ -282,7 +282,7 @@ export function closeApplicationWindows ({bundleId}, done = () => {}) {
 
 export function quitApplication ({bundleId}, done = () => {}) {
   if (isOSX()) {
-    global.quitApplication(bundleId, () => {})
+    global.quitApplication(bundleId, done)
   }
 }
 
