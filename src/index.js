@@ -762,26 +762,6 @@ export function reloadAddons () {
 
 /* Config and Context */
 
-// const subscription = new Observable(observer => {
-//   let subscriptionId
-
-//   if (isDemo()) {
-//     observer.next(global.demoConfig)
-//   } else if (isOSX()) {
-//     const {subscriptionId, value} = global.subscribeToChanges((value) => {
-//       observer.next(value)
-//     })
-//     observer.next(value)
-//     return () => {
-//       global.removeChangeSubscription(subscriptionId)
-//     }
-//   }
-// })
-
-// export function Config ({props}) {
-//   return subscription::map(x => x.config[props.property])
-// }
-
 export function openLaconaPreferences () {
   return send('OPEN_LACONA_PREFERENCES')
 }

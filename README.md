@@ -57,24 +57,27 @@ runApplescript({script: String}, done: Callback<Any>)
 Run `script` as an applescript script. Any value returned will be exported
 as a JSON object and provided to `done`.
 
-### querySpotlight
+=======
+This function does nothing if run on non-OSX environments.
+
+### fetchSpotlight
 
 ```js
-querySpotlight({
+fetchSpotlight({
   query: String,
   attributes: Array<String>,
   directories: Array<String>,
   limit: Integer
 }) -> Promise<Array<Object>>
+=======
 ```
 
-Queries Spotlight, and returns an Observable. Matches the signature of
-`mdfind`.
+Queries Spotlight once and closes the query. Returns an Promise.
 
 ### watchSpotlight
 
 ```js
-querySpotlight({
+watchSpotlight({
   query: String,
   attributes: Array<String>,
   directories: Array<String>,
@@ -82,8 +85,10 @@ querySpotlight({
 }) -> Observable<Array<Object>>
 ```
 
-Queries Spotlight, and returns an Observable. Matches the signature of
-`mdfind`.
+Queries Spotlight, and returns an Observable, which emits
+the entire query results everytime new data is found.
+
+Cancels the query when unsubscribed.
 
 ### callNode
 
@@ -92,6 +97,18 @@ Queries Spotlight, and returns an Observable. Matches the signature of
 ### callSystem
 
 **No longer use - use `child_process` instead**
+
+### showNotification
+
+```js
+showNotification({
+  title: String,
+  subtitle: String,
+  content: String
+}, done: Callback<void>)
+```
+
+Displays an OS notification (using Notification Center, on OSX).
 
 ## Opening Things
 
