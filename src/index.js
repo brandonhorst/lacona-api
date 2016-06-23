@@ -122,11 +122,20 @@ export function watchApplications ({directories, appPaths}) {
       query: "kMDItemContentTypeTree == 'com.apple.application'",
       attributes: ['kMDItemDisplayName', 'kMDItemCFBundleIdentifier', 'kMDItemAlternateNames']
     })::map((data) => {
-      return _.map(data, item => ({
-        name: item.kMDItemDisplayName,
-        bundleId: item.kMDItemCFBundleIdentifier,
-        alternativeNames: item.kMDItemAlternateNames
-      }))
+      return _.map(data, item => {
+        let alternativeNames = item.kMDItemAlternateNames || []
+        if (item.kMDItemCFBundleIdentifier === 'com.google.Chrome') {
+          alternativeNames = ['Chrome']
+        }
+        if (item.kMDItemCFBundleIdentifier === 'com.apple.iChat') {
+          alternativeNames = ['iMessage', 'iChat']
+        }
+        return {
+          name: item.kMDItemDisplayName,
+          bundleId: item.kMDItemCFBundleIdentifier,
+          alternativeNames
+        }
+      })
     })
   }
 }
