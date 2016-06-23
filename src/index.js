@@ -120,11 +120,12 @@ export function watchApplications ({directories, appPaths}) {
     return watchSpotlight({
       directories: trueDirectories,
       query: "kMDItemContentTypeTree == 'com.apple.application'",
-      attributes: ['kMDItemDisplayName', 'kMDItemCFBundleIdentifier']
+      attributes: ['kMDItemDisplayName', 'kMDItemCFBundleIdentifier', 'kMDItemAlternateNames']
     })::map((data) => {
-      return _.map(data, ({kMDItemDisplayName, kMDItemCFBundleIdentifier}) => ({
-        name: kMDItemDisplayName,
-        bundleId: kMDItemCFBundleIdentifier
+      return _.map(data, item => ({
+        name: item.kMDItemDisplayName,
+        bundleId: item.kMDItemCFBundleIdentifier,
+        alternativeNames: item.kMDItemAlternateNames
       }))
     })
   }
