@@ -134,7 +134,7 @@ export function watchApplications ({directories, appPaths}) {
     return watchSpotlight({
       directories: trueDirectories,
       query: "kMDItemContentTypeTree == 'com.apple.application'",
-      attributes: ['kMDItemDisplayName', 'kMDItemCFBundleIdentifier', 'kMDItemAlternateNames, kMDItemPath']
+      attributes: ['kMDItemDisplayName', 'kMDItemCFBundleIdentifier', 'kMDItemAlternateNames', 'kMDItemPath']
     })::map((data) => {
       return _.map(data, item => {
         let alternativeNames = item.kMDItemAlternateNames || []
