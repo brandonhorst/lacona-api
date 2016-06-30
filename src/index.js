@@ -185,10 +185,10 @@ export function watchBookmarks () {
       query: "kMDItemContentTypeTree = 'com.apple.safari.bookmark'",
       attributes: ['kMDItemDisplayName', 'kMDItemURL', 'kMDItemPath']
     })::map((data) => {
-      return _.map(data, ({kMDItemDisplayName, kMDItemURL}) => ({
+      return _.map(data, ({kMDItemDisplayName, kMDItemURL, kMDItemPath}) => ({
         name: kMDItemDisplayName,
         url: kMDItemURL,
-        path: item.kMDItemPath
+        path: kMDItemPath
       }))
     })
   }
