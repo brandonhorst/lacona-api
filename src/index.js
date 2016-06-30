@@ -85,13 +85,13 @@ export function openFile ({path}) {
 /* Events */
 
 export function createEvent ({title, start, end, allDay}) {
-  if (isOSX())  {
+  if (isOSX()) {
     return send('CREATE_EVENT', {title, start, end, allDay})
   }
 }
 
 export function createReminder ({title, date}) {
-  if (isOSX())  {
+  if (isOSX()) {
     return send('CREATE_REMINDER', {title, date})
   }
 }
@@ -99,8 +99,22 @@ export function createReminder ({title, date}) {
 /* Notifications */
 
 export function showNotification ({title, subtitle, content}) {
-  if (isOSX())  {
+  if (isOSX()) {
     return send('SHOW_NOTIFICATION', {title, subtitle, content})
+  }
+}
+
+/* Clipboard */
+
+export function fetchClipboard () {
+  if (isOSX()) {
+    return send('FETCH_CLIPBOARD')
+  }
+}
+
+export function setClipboard ({text}) {
+  if (isOSX()) {
+    return send('SET_CLIPBOARD', {text})
   }
 }
 
@@ -120,7 +134,7 @@ export function watchApplications ({directories, appPaths}) {
     return watchSpotlight({
       directories: trueDirectories,
       query: "kMDItemContentTypeTree == 'com.apple.application'",
-      attributes: ['kMDItemDisplayName', 'kMDItemCFBundleIdentifier', 'kMDItemAlternateNames']
+      attributes: ['kMDItemDisplayName', 'kMDItemCFBundleIdentifier', 'kMDItemAlternateNames, kMDItemPath']
     })::map((data) => {
       return _.map(data, item => {
         let alternativeNames = item.kMDItemAlternateNames || []
@@ -133,6 +147,7 @@ export function watchApplications ({directories, appPaths}) {
         return {
           name: item.kMDItemDisplayName,
           bundleId: item.kMDItemCFBundleIdentifier,
+          path: item.kMDItemPath,
           alternativeNames
         }
       })
@@ -168,11 +183,12 @@ export function watchBookmarks () {
   if (isOSX()) {
     return watchSpotlight({
       query: "kMDItemContentTypeTree = 'com.apple.safari.bookmark'",
-      attributes: ['kMDItemDisplayName', 'kMDItemURL']
+      attributes: ['kMDItemDisplayName', 'kMDItemURL', 'kMDItemPath']
     })::map((data) => {
       return _.map(data, ({kMDItemDisplayName, kMDItemURL}) => ({
         name: kMDItemDisplayName,
-        url: kMDItemURL
+        url: kMDItemURL,
+        path: item.kMDItemPath
       }))
     })
   }
