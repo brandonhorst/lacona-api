@@ -491,6 +491,14 @@ export function watchPreferencePanes () {
   }
 }
 
+/* Dictionary */
+
+export function fetchDictionaryDefinition ({word}) {
+  if (isOSX()) {
+    return send('FETCH_DICTIONARY_DEFINITION', {word})
+  }
+}
+
 /* Settings */
 
 export function setBluetooth ({enabled}) {
