@@ -493,9 +493,9 @@ export function watchPreferencePanes () {
 
 /* Dictionary */
 
-export function fetchDictionaryDefinition ({word}) {
+export function fetchDictionaryDefinitions ({word}) {
   if (isOSX()) {
-    return send('FETCH_DICTIONARY_DEFINITION', {word})
+    return send('FETCH_DICTIONARY_DEFINITIONS', {word})
   }
 }
 
