@@ -68,9 +68,9 @@ export function isDemo () {
 
 /* Open */
 
-function open ({url, path, bundleId}) {
+function open ({url, path, applicationPath}) {
   if (isOSX()) {
-    return send('OPEN', {url, path, bundleId})
+    return send('OPEN', {url, path, applicationPath})
   }
 }
 
@@ -155,16 +155,12 @@ export function watchApplications ({directories, appPaths}) {
   }
 }
 
-export function launchApplication ({bundleId}) {
-  return open({bundleId})
+export function openURLInApplication ({url, applicationPath}) {
+  return open({url, applicationPath})
 }
 
-export function openURLInApplication ({url, bundleId}) {
-  return open({url, bundleId})
-}
-
-export function openFileInApplication ({path, bundleId}) {
-  return open({path, bundleId})
+export function openFileInApplication ({path, applicationPath}) {
+  return open({path, applicationPath})
 }
 
 export function fetchApplication({name}) {
@@ -277,36 +273,36 @@ export function fetchRunningApplications () {
   }
 }
 
-export function activateApplication ({bundleId}) {
+export function activateApplication ({path}) {
   if (isOSX()) {
-    return open({bundleId})
+    return open({path})
   }
 }
 
-export function hideApplication ({bundleId}) {
+export function hideApplication ({path}) {
   if (isOSX()) {
-    return send('HIDE', {bundleId})
+    return send('HIDE', {path})
   }
 }
 
-export function closeApplicationWindows ({bundleId}) {
-  if (isOSX()) {
-    const script = `
-      tell application "System Events"
-        set proc to first process whose background only is false and bundle identifier is "${bundleId}"
-        repeat with win in proc's windows
-          set butt to (win's first button whose subrole is "AXCloseButton")
-          click butt
-        end repeat
-      end tell
-    `
-    return runApplescript({script})
-  }
-}
+// export function closeApplicationWindows ({bundleId}) {
+//   if (isOSX()) {
+//     const script = `
+//       tell application "System Events"
+//         set proc to first process whose background only is false and bundle identifier is "${bundleId}"
+//         repeat with win in proc's windows
+//           set butt to (win's first button whose subrole is "AXCloseButton")
+//           click butt
+//         end repeat
+//       end tell
+//     `
+//     return runApplescript({script})
+//   }
+// }
 
-export function quitApplication ({bundleId}) {
+export function quitApplication ({path}) {
   if (isOSX()) {
-    return send('QUIT', {bundleId})
+    return send('QUIT', {path})
   }
 }
 
@@ -546,7 +542,7 @@ export async function setWifi ({enabled}) {
 export async function checkWifi () {
   if (isOSX()) {
     const stdout = await callSystem('/usr/sbin/networksetup -getairportpower en0')
-    return _.includes(results, 'On')
+    return {enabled: _.includes(stdout, 'On')}
   }
 }
 
@@ -564,7 +560,7 @@ export async function setDoNotDisturb ({enabled}) {
 export async function checkDoNotDisturb () {
   if (isOSX()) {
     const stdout = await callSystem(`/usr/bin/defaults -currentHost read ${userHome()}/Library/Preferences/ByHost/com.apple.notificationcenterui doNotDisturb`)
-    return _.includes(results, '1')
+    return {enabled: _.includes(stdout, '1')}
   }
 }
 
