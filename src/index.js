@@ -285,20 +285,20 @@ export function hideApplication ({path}) {
   }
 }
 
-// export function closeApplicationWindows ({bundleId}) {
-//   if (isOSX()) {
-//     const script = `
-//       tell application "System Events"
-//         set proc to first process whose background only is false and bundle identifier is "${bundleId}"
-//         repeat with win in proc's windows
-//           set butt to (win's first button whose subrole is "AXCloseButton")
-//           click butt
-//         end repeat
-//       end tell
-//     `
-//     return runApplescript({script})
-//   }
-// }
+export function closeApplicationWindows ({bundleId}) {
+  if (isOSX()) {
+    const script = `
+      tell application "System Events"
+        set proc to first process whose background only is false and bundle identifier is "${bundleId}"
+        repeat with win in proc's windows
+          set butt to (win's first button whose subrole is "AXCloseButton")
+          click butt
+        end repeat
+      end tell
+    `
+    return runApplescript({script})
+  }
+}
 
 export function quitApplication ({path}) {
   if (isOSX()) {
