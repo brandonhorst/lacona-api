@@ -1,6 +1,6 @@
 {
   "name": "lacona-api",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Cross-platform API for use with lacona commands",
   "main": "lib-node/index.js",
   "jsnext:main": "lib-es/index.js",
