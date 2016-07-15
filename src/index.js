@@ -605,7 +605,7 @@ export function sleep () {
 
 export function lock () {
   if (isOSX()) {
-    return callSystem('/System/Library/CoreServices/Menu Extras/User.menu/Contents/Resources/CGSession -suspend')
+    return callSystem('/System/Library/CoreServices/Menu\\ Extras/User.menu/Contents/Resources/CGSession -suspend')
   }
 }
 
