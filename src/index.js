@@ -84,15 +84,15 @@ export function openFile ({path}) {
 
 /* Events */
 
-export function createEvent ({title, start, end, allDay}) {
+export function createEvent ({title, start, end, allDay, calendar}) {
   if (isOSX()) {
-    return send('CREATE_EVENT', {title, start, end, allDay})
+    return send('CREATE_EVENT', {title, start, end, allDay, calendar})
   }
 }
 
-export function createReminder ({title, date}) {
+export function createReminder ({title, date, reminderList}) {
   if (isOSX()) {
-    return send('CREATE_REMINDER', {title, date})
+    return send('CREATE_REMINDER', {title, date, reminderList})
   }
 }
 
