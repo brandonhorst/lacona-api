@@ -96,6 +96,18 @@ export function createReminder ({title, date}) {
   }
 }
 
+export function fetchReminderLists () {
+  if (isOSX()) {
+    return send('FETCH_REMINDER_LISTS')
+  }
+}
+
+export function fetchCalendars () {
+  if (isOSX()) {
+    return send('FETCH_CALENDARS')
+  }
+}
+
 /* Notifications */
 
 export function showNotification ({title, subtitle, content}) {
