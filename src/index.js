@@ -84,9 +84,9 @@ export function openFile ({path}) {
 
 /* Events */
 
-export function createEvent ({title, start, end, allDay, calendar}) {
+export function createEvent ({title, start, end, allDay, calendar, location}) {
   if (isOSX()) {
-    return send('CREATE_EVENT', {title, start, end, allDay, calendar})
+    return send('CREATE_EVENT', {title, start, end, allDay, calendar, location})
   }
 }
 

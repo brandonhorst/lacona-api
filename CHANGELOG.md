@@ -1,3 +1,7 @@
+# 1.3.0
+
+- Specify a location with createEvent
+
 # 1.2.0 
 
 - Specify a calendar with createEvent or a reminderList with createReminder
