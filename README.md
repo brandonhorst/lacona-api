@@ -110,6 +110,18 @@ showNotification({
 
 Displays an OS notification (using Notification Center, on OSX).
 
+### fetchUserDefaults
+
+```js
+fetchUserDefaults({
+  domain: String,
+  key: String
+}, done: Callback<Any>)
+```
+
+Fetch system defaults. If no `key` is provided, it will fetch an Object
+representing the entire domain. Equivalent to using `defaults read`.
+
 ## Opening Things
 
 ### openURL

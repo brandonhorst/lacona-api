@@ -116,6 +116,15 @@ export function showNotification ({title, subtitle, content}) {
   }
 }
 
+/* User Defaults */
+
+// FIRST AVAILABLE IN 1.0.3
+export function fetchUserDefaults ({domain, key}) {
+  if (isOSX()) {
+    return send('FETCH_USER_DEFAULTS', {domain, key})
+  }
+}
+
 /* Clipboard */
 
 export function fetchClipboard () {
