@@ -260,6 +260,7 @@ export async function fetchFiles ({query}) {
         'kMDItemContentTypeTree != "com.apple.application-bundle" AND ' +
         'kMDItemContentTypeTree != "com.apple.safari.bookmark" AND ' +
         'kMDItemContentTypeTree != "public.contact" AND ' +
+        'kMDItemContentTypeTree != "com.apple.addressbook.group" AND ' +
         'kMDItemContentTypeTree != "com.apple.safari.history" AND ' +
         'kMDItemContentTypeTree != "public.calendar-event" AND ' +
         'kMDItemContentTypeTree != "com.apple.ichat.transcript"',
