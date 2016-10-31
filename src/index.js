@@ -84,6 +84,18 @@ export function openFile ({path}) {
 
 /* Events */
 
+export function canAccessEvents () {
+  if (isOSX()) {
+    return send('CAN_ACCESS_EVENTS')
+  }
+}
+
+export function canAccessReminders () {
+  if (isOSX()) {
+    return send('CAN_ACCESS_REMINDERS')
+  }
+}
+
 export function createEvent ({title, start, end, allDay, calendar, location}) {
   if (isOSX()) {
     return send('CREATE_EVENT', {title, start, end, allDay, calendar, location})
@@ -212,6 +224,12 @@ export function watchBookmarks () {
 }
 
 /* Contacts */
+
+export function canAccessContacts () {
+  if (isOSX()) {
+    return send('CAN_ACCESS_CONTACTS')
+  }
+}
 
 export function fetchUserContact () {
   if (isDemo()) {
