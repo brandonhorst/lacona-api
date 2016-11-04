@@ -551,13 +551,29 @@ export function checkBluetooth () {
 
 export function setDarkMode ({enabled}) {
   if (isOSX()) {
-    return send('SET_DARK_MODE', {enabled})
+    const script = `
+      tell application "System Events"
+        tell appearance preferences
+          set dark mode to ${enabled ? 'true' : 'false'}
+        end tell
+      end tell
+    `
+    return runApplescript({script})
   }
 }
 
-export function checkDarkMode () {
+const CHECK_DARK_MODE_SCRIPT = `
+  tell application "System Events"
+    tell appearance preferences
+      return dark mode
+    end tell
+  end tell
+`
+
+export async function checkDarkMode () {
   if (isOSX()) {
-    return send('CHECK_DARK_MODE')
+    const enabled = await runApplescript({script: CHECK_DARK_MODE_SCRIPT})
+    return {enabled}
   }
 }
 
