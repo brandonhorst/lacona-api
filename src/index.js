@@ -2,7 +2,7 @@
 import _ from 'lodash'
 import {map} from 'rxjs/operator/map'
 import {Observable} from 'rxjs/Observable'
-import {v4 as guid} from 'node-uuid'
+import {v4 as guid} from 'uuid'
 import {exec} from 'child_process'
 
 const demoConfig = {
